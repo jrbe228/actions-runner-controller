@@ -42,6 +42,7 @@ const AutoscalingRunnerSetCleanupFinalizerName = "actions.github.com/cleanup-pro
 const (
 	AnnotationKeyGitHubRunnerGroupName    = "actions.github.com/runner-group-name"
 	AnnotationKeyGitHubRunnerScaleSetName = "actions.github.com/runner-scale-set-name"
+	AnnotationKeyMessageID                = "actions.github.com/message-id"
 )
 
 // Labels applied to listener roles

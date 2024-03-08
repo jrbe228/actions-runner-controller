@@ -6957,6 +6957,8 @@ spec:
                         - containers
                       type: object
                   type: object
+                messageID:
+                  type: integer
                 replicas:
                   description: Replicas is the number of desired EphemeralRunner resources in the k8s namespace.
                   type: integer
