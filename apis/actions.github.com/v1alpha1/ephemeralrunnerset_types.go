@@ -23,8 +23,8 @@ import (
 // EphemeralRunnerSetSpec defines the desired state of EphemeralRunnerSet
 type EphemeralRunnerSetSpec struct {
 	// Replicas is the number of desired EphemeralRunner resources in the k8s namespace.
-	Replicas  int `json:"replicas,omitempty"`
-	MessageID int `json:"messageID"`
+	Replicas int `json:"replicas,omitempty"`
+	PatchID  int `json:"patchID"`
 
 	EphemeralRunnerSpec EphemeralRunnerSpec `json:"ephemeralRunnerSpec,omitempty"`
 }

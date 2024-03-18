@@ -191,12 +191,11 @@ func (r *EphemeralRunnerSetReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	total := ephemeralRunnerState.scaleTotal()
-	if ephemeralRunnerSet.Spec.MessageID == 0 || ephemeralRunnerSet.Spec.MessageID != ephemeralRunnerState.maxMessageID {
-		// TODO: rename to scaleCount
+	if ephemeralRunnerSet.Spec.PatchID == 0 || ephemeralRunnerSet.Spec.PatchID != ephemeralRunnerState.latestPatchID {
+		defer r.cleanupFinishedEphemeralRunners(ctx, ephemeralRunnerState.finished, log)
 		log.Info("Scaling comparison", "current", total, "desired", ephemeralRunnerSet.Spec.Replicas)
 		switch {
 		case total < ephemeralRunnerSet.Spec.Replicas: // Handle scale up
-			defer r.cleanupFinishedEphemeralRunners(ctx, ephemeralRunnerState.finished, log)
 			count := ephemeralRunnerSet.Spec.Replicas - total
 			log.Info("Creating new ephemeral runners (scale up)", "count", count)
 			if err := r.createEphemeralRunners(ctx, ephemeralRunnerSet, count, log); err != nil {
@@ -212,7 +211,6 @@ func (r *EphemeralRunnerSetReconciler) Reconcile(ctx context.Context, req ctrl.R
 				ephemeralRunnerSet,
 				ephemeralRunnerState.pending,
 				ephemeralRunnerState.running,
-				ephemeralRunnerState.finished,
 				count,
 				log,
 			); err != nil {
@@ -430,8 +428,8 @@ func (r *EphemeralRunnerSetReconciler) createProxySecret(ctx context.Context, ep
 // if there are not enough ephemeral runners that have registered with Actions service.
 // When this happens, the next reconcile loop will try to delete the remaining ephemeral runners
 // after we get notified by any of the `v1alpha1.EphemeralRunner.Status` updates.
-func (r *EphemeralRunnerSetReconciler) deleteIdleEphemeralRunners(ctx context.Context, ephemeralRunnerSet *v1alpha1.EphemeralRunnerSet, pendingEphemeralRunners, runningEphemeralRunners, finishedEphemeralRunners []*v1alpha1.EphemeralRunner, count int, log logr.Logger) error {
-	runners := newEphemeralRunnerStepper(finishedEphemeralRunners, pendingEphemeralRunners, runningEphemeralRunners)
+func (r *EphemeralRunnerSetReconciler) deleteIdleEphemeralRunners(ctx context.Context, ephemeralRunnerSet *v1alpha1.EphemeralRunnerSet, pendingEphemeralRunners, runningEphemeralRunners []*v1alpha1.EphemeralRunner, count int, log logr.Logger) error {
+	runners := newEphemeralRunnerStepper(pendingEphemeralRunners, runningEphemeralRunners)
 	if runners.len() == 0 {
 		log.Info("No pending or running ephemeral runners running at this time for scale down")
 		return nil
@@ -644,7 +642,7 @@ type ephemeralRunnerState struct {
 	failed   []*v1alpha1.EphemeralRunner
 	deleting []*v1alpha1.EphemeralRunner
 
-	maxMessageID int
+	latestPatchID int
 }
 
 func newEphemeralRunnerState(ephemeralRunnerList *v1alpha1.EphemeralRunnerList) *ephemeralRunnerState {
@@ -652,9 +650,9 @@ func newEphemeralRunnerState(ephemeralRunnerList *v1alpha1.EphemeralRunnerList) 
 
 	for i := range ephemeralRunnerList.Items {
 		r := &ephemeralRunnerList.Items[i]
-		messageID, err := strconv.Atoi(r.Annotations[AnnotationKeyMessageID])
-		if err == nil && messageID > ephemeralRunnerState.maxMessageID {
-			ephemeralRunnerState.maxMessageID = messageID
+		patchID, err := strconv.Atoi(r.Annotations[AnnotationKeyPatchID])
+		if err == nil && patchID > ephemeralRunnerState.latestPatchID {
+			ephemeralRunnerState.latestPatchID = patchID
 		}
 		if !r.ObjectMeta.DeletionTimestamp.IsZero() {
 			ephemeralRunnerState.deleting = append(ephemeralRunnerState.deleting, r)

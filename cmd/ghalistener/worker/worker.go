@@ -188,8 +188,8 @@ func (w *Worker) HandleDesiredRunnerCount(ctx context.Context, count int, jobsCo
 	original, err := json.Marshal(
 		&v1alpha1.EphemeralRunnerSet{
 			Spec: v1alpha1.EphemeralRunnerSetSpec{
-				Replicas:  -1,
-				MessageID: -1,
+				Replicas: -1,
+				PatchID:  -1,
 			},
 		},
 	)
@@ -200,8 +200,8 @@ func (w *Worker) HandleDesiredRunnerCount(ctx context.Context, count int, jobsCo
 	patch, err := json.Marshal(
 		&v1alpha1.EphemeralRunnerSet{
 			Spec: v1alpha1.EphemeralRunnerSetSpec{
-				Replicas:  targetRunnerCount,
-				MessageID: w.lastPatchID,
+				Replicas: targetRunnerCount,
+				PatchID:  w.lastPatchID,
 			},
 		},
 	)
